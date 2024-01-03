@@ -1,0 +1,31 @@
+#note:
+#replace 
+#x with api which you got from a telegram bot
+#y with your id telegram
+
+
+{
+
+:local id "y";
+:local api "x";
+:do {
+:local TIME "$([/system clock get time])+$([/system clock get date])";
+:local ACT [:len [/ip neighbor find]];
+:local ACTIVE "";
+:do {
+:foreach i in=([/ip neighbor find]) do={
+:local user [/ip neighbor get $i identity];
+:local address [/ip neighbor get $i address];
+:local mac [/ip neighbor get $i mac-address];
+:set ACTIVE ($ACTIVE . ("$address+%E2%96%BA+$mac+%E2%96%BA+$user+%0A"));
+}
+#:put "$ACTIVE";
+} on-error={:log warning message=("error getting WAN interface for whatsapp service")}
+:local url "https://api.telegram.org/bot$api/sendMessage\?chat_id=$id$phone&text=basha.net+%0Atime:+$TIME%0Aactive:+$ACT%0A+$ACTIVE&apikey=$apikey";
+/tool fetch url=$url dst-path=wp_response.txt;
+:delay 2;
+:local result [/file get wp_response.txt contents];
+:local resultLen [ :len $result ] ;
+} on-error={:log error message=("error")}
+
+}

@@ -1,0 +1,71 @@
+#note:
+#replace 
+#x with api which you got from a telegram bot
+#y with your id telegram
+
+
+
+{
+:local id "191099940";
+:local api "6388738719:AAG0JFrMJtWQAEBUbfkoRKVCwo6dhLroW3w";
+:do {
+:log warning "START Sending active to whatsapp";
+:local TIME [/system clock get time];
+:local ID "$([/system routerboard get model])+$([/system identity get name])";
+:local UPTIME [/system resource get uptime];
+:local ACT [:len [/ip hotspot active find]];
+:local ACTIVE "";
+:do {
+:foreach i in=([/ip hotspot active find]) do={
+:local user [/ip hotspot active get $i user];
+:local address [/ip hotspot active get $i address];
+:local mac [/ip hotspot active get $i mac-address];
+:set ACTIVE ($ACTIVE . ("$user+%E2%96%BA+$address+%E2%96%BA+$mac+%0A"));
+#:log warning "$ACTIVE";
+}
+#:log warning "$ACTIVE";
+#:put "$ACTIVE";
+} on-error={:log warning message=("error getting WAN interface for whatsapp service")}
+:local url "https://api.telegram.org/bot$api/sendMessage\?chat_id=$id$phone&text=basha.net+%0Atime:+$TIME%0AID:+$ID%0Auptime:+$UPTIME%0Aactive:+$ACT%0A+$ACTIVE&apikey=$apikey";
+:log info $url;
+/tool fetch url=$url dst-path=wp_response.txt;
+:delay 2;
+:local result [/file get wp_response.txt contents];
+:local resultLen [ :len $result ] ;
+:log warning ("Finish: " . [:pick $result  ($resultLen-37) $resultLen ]);
+#:log warning "result $result";
+} on-error={:log error message=("error")}
+}
+{
+:delay 1000ms;   
+:do {
+:log warning "START Sending Host to whatsapp";
+:local TIME [/system clock get time];
+:local UPTIME [/system resource get uptime];
+:local host [:len [/ip hotspot host find]];
+:local HOST "";
+:do {
+:foreach i in=([/ip hotspot host find where authorized=no]) do={
+:local mac [/ip hotspot host get $i mac-address];
+:local address [/ip hotspot host get $i address];
+:local uptime [/ip hotspot host get $i uptime];
+:local com [/ip hotspot host get $i comment];
+:local data ((([/ip hotspot host get $i bytes-in]+[/ip hotspot host get $i bytes-out])/1024)/1024);
+:local phonename [/ip dhcp-server lease get [find active-mac-address=$mac] host-name];
+:set HOST ($HOST . ("$phonename+%E2%96%BA$mac+%E2%96%BA$address+%E2%96%BA$uptime+%E2%96%BA$com+%E2%96%BA$data+MB%0A"));
+#:log warning "$HOST";
+}
+#:log warning "$HOST";
+#:put "$HOST";
+  } on-error={:log warning message=("error getting WAN interface for whatsapp service")}
+
+:local url "https://api.telegram.org/bot$api/sendMessage\?chat_id=$id$phone&text=basha.net+%0Atime:+$TIME%0Auptime:+$UPTIME%0Ahost:+$host%0A+$HOST&apikey=$apikey";
+:log info $url;
+/tool fetch url=$url dst-path=wp_response.txt;
+:delay 2;
+:local result [/file get wp_response.txt contents];
+:local resultLen [ :len $result ] ;
+:log warning ("Finish: " . [:pick $result  ($resultLen-37) $resultLen ]);
+#:log warning "result $result";
+} on-error={:log error message=("error")}
+}
